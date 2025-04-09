@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Skull Tracker + Prediction</title>
+  <style>
+    body {
+      font-family: sans-serif;
+      background: #f0f0f0;
+      padding: 20px;
+      text-align: center;
+    }
+    h1 {
+      margin-bottom: 10px;
+    }
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(5, 50px);
+      gap: 8px;
+      justify-content: center;
+      margin-bottom: 20px;
+    }
+    .cell {
+      width: 50px;
+      height: 50px;
+      font-size: 24px;
+      border: 1px solid #ccc;
+      border-radius: 6px;
+      background: white;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+    }
+    .hot {
+      box-shadow: inset 0 0 0 3px red;
+    }
+    .footer {
+      margin-top: 10px;
+      font-size: 14px;
+      color: #666;
+    }
+    .legend {
+      font-size: 16px;
+      margin-top: 10px;
+    }
+  </style>
+</head>
+<body>
+  <h1>Skull Tracker Tool 🔮</h1>
+  <p>Click tiles to mark ❓ → ✅ → 💀 → 💎</p>
+  <div class="grid" id="grid"></div>
+  <div class="legend">🔴 = Skull Hot Zone (based on prediction)</div>
+  <div class="footer">Data saved locally on your device</div>
+
+  <script>
+    const symbols = ["❓", "✅", "💀", "💎"];
+    const grid = document.getElementById("grid");
+    const maxHistory = 10;
+    const skullHistory = [];
+
+    for (let row = 1; row <= 10; row++) {
+      for (let col of ["A", "B", "C", "D", "E"]) {
+        const key = col + row;
+        const cell = document.createElement("div");
+        cell.className = "cell";
+        cell.id = key;
+        cell.textContent = "❓";
+        cell.dataset.state = "0";
+        cell.dataset.key = key;
+
+        cell.addEventListener("click", () => {
+          let nextState = (parseInt(cell.dataset.state) + 1) % symbols.length;
+          cell.dataset.state = nextState;
+          cell.textContent = symbols[nextState];
+
+          if (symbols[nextState] === "💀") {
+            skullHistory.push(key);
+            if (skullHistory.length > maxHistory) skullHistory.shift();
+          }
+          updateHotZones();
+        });
+
+        grid.appendChild(cell);
+      }
+    }
+
+    function updateHotZones() {
+      const freqMap = {};
+      skullHistory.forEach(k => {
+        freqMap[k] = (freqMap[k] || 0) + 1;
+      });
+
+      const hotZones = Object.entries(freqMap)
+        .sort((a, b) => b[1] - a[1])
+        .slice(0, 5)
+        .map(e => e[0]);
+
+      document.querySelectorAll(".cell").forEach(cell => {
+        if (hotZones.includes(cell.dataset.key)) {
+          cell.classList.add("hot");
+        } else {
+          cell.classList.remove("hot");
+        }
+      });
+    }
+  </script>
+</body>
+</html>
